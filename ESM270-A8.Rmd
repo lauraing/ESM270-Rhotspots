@@ -14,5 +14,183 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 
+# Load the libraries into this R session
+library(raster)       #Main raster library with nearly all functions used in this analysis
+library(rgdal)        #Spatial library - most functions used from rgdal are for vectors (shapefiles)
+library(rasterVis)    #Useful for raster visualizations
+library(maps)         #Has a database of maps. I use this to add a map to my raster to visualize land boundaries
+library(rgeos)        #Need this library for topology operations on geometries
+library(dplyr)        #NOT spatial - this is a data wrangling library
+library(RColorBrewer) #Also not spatial - used to set the spectral color scheme
+
+```
+
+```{r, Part 2}
+
+# view some color palettes
+# display.brewer.all()
+# rainbow color scheme
+cols = rev(colorRampPalette(brewer.pal(11, 'Spectral'))(255)) 
+
+#setting smaller margins for plotting
+par(mar=c(2,2,1,1))
+
+```
+
+```{r, Read in Raster Data}
+
+# Let’s import the raster with the cumulative threat layer. Create a raster of the first file by calling raster() (think of this function like read.csv() for raster data, if you are familiar with that function).
+
+# Read in raster data
+all_threats <- raster("full_modelnv.tif")
+
+```
+
+```{r, Vizualize}
+
+# We can then use plot() to plot the raster; it’s that easy! To override the default color scheme, we define the argument col= as our own scheme cols from above.
+
+plot(all_threats,col=cols)
+
+# We can add a basemap to our raster by utilizing the maps package
+
+# add a landmap to your shapefile. the add=T argument tells R to add it to the existing plot.
+# make sure you understand what the other arguments do
+plot(all_threats,ext=extent(-130,-110,24,50),col=cols)
+map('world',fill=T,add=T,col='gray')
+
+
+```
+
+```{r, Extent and Zoom}
+
+# Visualizing exploring rasters in different ways can give us a great idea of our data, without even running much analysis. You can visualize a different extent, or subset, of the data:
+
+plot(all_threats,col=cols,ext=extent(-121,-117,32,35),main="Cumulative Threats") # A good extent for the Santa Barbara Channel
+
+# Lower values are in darker/cooler colors; higher threat values are in red colors (scale of 0 to 65)
+  # it's actually the stack of these threats; each # in the stack adds together to get this stacked score
+
+# The zoom() function, by default, allows you to draw your own extent just by clicking twice.
+plot(all_threats,col=cols)
+# zoom(all_threats,col=cols) #Interactive code not run in html
+
+# QUESTION: Which part of the SF Bay area is at highest threat?
+  # Areas right along the shore, up into the estuary. If we included runoff, pollution, or coastal erosion, that might make sense that some of the highest threat values in the bay area are right near the city.
+
+```
+
+```{r, Raster data attributes}
+
+# Beyond visualization, we can also look at some simple characteristics of the data itself. Just calling the name of our raster will give us some information:
+
+all_threats
+
+# QUESTION: What is the minimum value of all raster cells in our threats layer?
+  # values: 1.027101, 83.84592  (min, max)
+  # minimum value = 1.027101 (doesn't show up on ours)
+
+# We can look at the frequency histogram of raster cell values.
+hist(all_threats,main="Cumulative Threats Frequency")
+# warning message: it knew we were stupid to choose 16 million to do a histogram on, so it chose a subset for us
+# frequency in this case, the number of cells, that fall within one bin (bins of 5)
+
+# Also, the function cellStats() allows us to run some basic statistics. Type ?cellStats to read what the function can do
+  # stat is the function we want it to run
+
+# We want to get the mean of the all_threats raster
+cellStats(all_threats,mean)
+# [1] 14.00092
+
+# QUESTION: What is the standard deviation of all raster cells in our threats layer?
+cellStats(all_threats,sd)
+# 2.958941
+# Seems to have a pretty tight distribution with these long tails
+
+```
+
+```{r, Part 3: Raster Calculations}
+
+# Quickly visualizing raster data in R is nice, but the real power of raster analysis is when we can perform calculations that link two or more raster layers. If you remember from our hotspots lab, our first task was to overlay the top 20% of cumulative threats with the top 20% of species richness, to find threat hotspots (where high species richness overlaps with a lot of different threats). This will require 4 steps:
+
+# 1) Import the data (already done for threats)
+# 2) Resample the data to the same resolution
+# 3) Reclassify the data to find the top 20%
+# 4) Overlay the data and find hotspots
+
+```
+
+```{r, Import Species Data}
+
+# The species data is in the Species data directory, and we import it just as we did the threats layer, by providing a full path name. We can then check its attributes.
+
+# Make sure the pathname to the data is correct
+all_spp <- raster("ca_curr_sp_rich.tif")
+
+all_spp
+
+plot(all_spp,col=cols)
+
+# Seem to be more species toward the coast than offshore
+
+```
+
+```{r, Cropping and Resolving}
+
+# If you type all_spp and all_threats (or plot them), you should be able to tell that we may run into problems trying to immediately do calculations on them, as they have different extents and resolutions. Two helpful functions to deal with these problems are crop() and resample().
+
+# QUESTION: Before doing the next step, which of our two rasters has a greater extent? a higher (finer) resolution? What does this mean about how we should resample?
+  # The threats layer raster has a greater extent. (compare the "extent" when you type "all_threats" and "all_spp" into console or code)
+  # The threats layer raster has a higher (finer) resolution.
+  # We should resample using the threats layer
+
+
+#### CROP #####
+# We first crop the threats layer to the extent of the species layer
+
+#?crop see what the crop function does
+
+threats_crop <- crop(all_threats,all_spp) #Crop the threats layer to the same extent at species
+
+
+#### RESAMPLE ####
+# Now the threats layer has the same extent as the species layer. But we have to resample the species layer such that it has the same resolution as the threats layer.
+
+#?resample see what the resample function does
+# NOTE: the progress='text' argument is a great tool: it prints out the progress
+# of a longer-running function into the console, so you can see how the operation is going
+
+# the method='ngb' argument specifies that we want to use a nearest neighbor algorithm to resample, instead of interpolation
+spp_res <- resample(all_spp,threats_crop,method='ngb',progress='text')
+# Have to think about which way we want to go for our own analysis
+# We're subsetting the species raster so it has a higher resolution
+# "ngb" = nearest neighbor; this cell will take the value of the closest cell 
+
+#### RASTER STACK ####
+# We can check that the two layers will line up decently by using the stack() function. stack() creates a RasterStack object, which is basically just exactly what it sounds like: A single object holding multiple raster layers. This isn’t as useful for just a couple of layers, but it will likely be useful to you later on when you are combining multiple threat layers.
+
+# stack: putting the layers on top of each other and seeing if they line up
+# if they don't line up, it won't stack (error)
+
+spp_threat_stack <- stack(threats_crop,spp_res)
+plot(spp_threat_stack,col=cols)
+
+# Even though these layers still look similar to how they did before, the fact that they stacked together means they are likely ready for combination.
+
+# Even though it looks big and blocky, it has a lot of smaller cells in there
+# bilinear: if I'm at 1 and looking up at 3, the values between me and there are going to be up along that slope, as opposed to (1 1 1 1 1, break, 3 3 3 3 3); it's just the slope of the line between the two cells
+
+#### RECLASSIFY ####
+
+
+#### HOTSPOTS ####
+
+
+```
+
+```{r}
+
+
+
 ```
 
