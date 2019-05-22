@@ -1,0 +1,11 @@
+---
+title: "ESM 270 Assignment 8 - R Hot Spots"
+author: "Laura Ingulsrud & Tess Hooper"
+date: "5/22/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
