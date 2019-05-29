@@ -22,6 +22,7 @@ library(maps)         #Has a database of maps. I use this to add a map to my ras
 library(rgeos)        #Need this library for topology operations on geometries
 library(dplyr)        #NOT spatial - this is a data wrangling library
 library(RColorBrewer) #Also not spatial - used to set the spectral color scheme
+library(tmap)
 
 ```
 
