@@ -38,7 +38,7 @@ par(mar=c(2,2,1,1))
 
 ```
 
-```{r, Read in Raster Data}
+```{r, Read in Threat Raster Data}
 
 # Let’s import the raster with the cumulative threat layer. Create a raster of the first file by calling raster() (think of this function like read.csv() for raster data, if you are familiar with that function).
 
@@ -52,7 +52,7 @@ impact_trash <- raster("impact_trash.tif")
 
 ```
 
-```{r, Vizualize}
+```{r, Vizualize Threats}
 
 # We can then use plot() to plot the raster; it’s that easy! To override the default color scheme, we define the argument col= as our own scheme cols from above.
 
@@ -106,18 +106,22 @@ plot(impact_trash,col=cols)
 
 ```
 
-```{r, Raster data attributes}
+```{r, Threat Raster data attributes}
 
 # Beyond visualization, we can also look at some simple characteristics of the data itself. Just calling the name of our raster will give us some information:
 
-all_threats
+impact_invasives 
+impact_oil 
+impact_pens 
+impact_pollution 
+impact_shipping
+impact_trash 
 
 # QUESTION: What is the minimum value of all raster cells in our threats layer?
-  # values: 1.027101, 83.84592  (min, max)
-  # minimum value = 1.027101 (doesn't show up on ours)
+
 
 # We can look at the frequency histogram of raster cell values.
-hist(all_threats,main="Cumulative Threats Frequency")
+hist(impact_invasives,main="Invasives Threats Frequency")
 # warning message: it knew we were stupid to choose 16 million to do a histogram on, so it chose a subset for us
 # frequency in this case, the number of cells, that fall within one bin (bins of 5)
 
@@ -125,12 +129,12 @@ hist(all_threats,main="Cumulative Threats Frequency")
   # stat is the function we want it to run
 
 # We want to get the mean of the all_threats raster
-cellStats(all_threats,mean)
-# [1] 14.00092
+cellStats(impact_invasives,mean)
+# [1] -5.001484e+33
 
 # QUESTION: What is the standard deviation of all raster cells in our threats layer?
-cellStats(all_threats,sd)
-# 2.958941
+cellStats(impact_invasives,sd)
+# 2.235841e+35
 # Seems to have a pretty tight distribution with these long tails
 
 ```
@@ -163,11 +167,16 @@ krill_4
 
 plot(krill_1,col=cols)
 
+
+blue_whale <- raster("ca_current_aquamap_Balaenoptera_musculus.tif")
+fin_whale <- raster("ca_current_aquamap_Balaenoptera_physalus.tif")
+humpback <- raster("ca_current_aquamap_Megaptera_novaeangliae.tif")
+
 # Seem to be more species toward the coast than offshore
 
 ```
 
-```{r, Cropping and Resolving}
+```{r, Cropping and Resampling}
 
 # If you type all_spp and all_threats (or plot them), you should be able to tell that we may run into problems trying to immediately do calculations on them, as they have different extents and resolutions. Two helpful functions to deal with these problems are crop() and resample().
 
@@ -176,27 +185,55 @@ plot(krill_1,col=cols)
   # The threats layer raster has a higher (finer) resolution.
   # We should resample using the threats layer
 
-
+########################################################################################
 #### CROP #####
 # We first crop the threats layer to the extent of the species layer
 
 #?crop see what the crop function does
 
-threats_crop <- crop(all_threats,all_spp) #Crop the threats layer to the same extent at species
+invasives_crop <- crop(impact_invasives, krill_1) #Crop the threats layer to the same extent at species
+oil_crop <- crop(impact_oil, krill_1)
+pens_crop <- crop(impact_pens, krill_1)
+pollution_crop <- crop(impact_pollution, krill_1)
+shipping_crop <- crop(impact_pollution, krill_1)
+trash_crop <- crop(impact_trash, krill_1)
 
+#######################################################################################
 
 #### RESAMPLE ####
 # Now the threats layer has the same extent as the species layer. But we have to resample the species layer such that it has the same resolution as the threats layer.
+
+
 
 #?resample see what the resample function does
 # NOTE: the progress='text' argument is a great tool: it prints out the progress
 # of a longer-running function into the console, so you can see how the operation is going
 
+
+
 # the method='ngb' argument specifies that we want to use a nearest neighbor algorithm to resample, instead of interpolation
-spp_res <- resample(all_spp,threats_crop,method='ngb',progress='text')
+
+
+krill1_res <- resample(krill_1,invasives_crop,method='ngb',progress='text')
+krill2_res <- resample(krill_2,invasives_crop,method='ngb',progress='text')
+krill3_res <- resample(krill_3,invasives_crop,method='ngb',progress='text')
+krill4_res <- resample(krill_4,invasives_crop,method='ngb',progress='text')
+
+blue_res <- resample(blue_whale,invasives_crop,method='ngb',progress='text')
+fin_res <- resample(fin_whale,invasives_crop,method='ngb',progress='text')
+humpback_res <- resample(humpback,invasives_crop,method='ngb',progress='text')
+
+
 # Have to think about which way we want to go for our own analysis
 # We're subsetting the species raster so it has a higher resolution
 # "ngb" = nearest neighbor; this cell will take the value of the closest cell 
+
+
+```
+
+
+
+```{r, Raster Stack Threats and Species}
 
 #### RASTER STACK ####
 # We can check that the two layers will line up decently by using the stack() function. stack() creates a RasterStack object, which is basically just exactly what it sounds like: A single object holding multiple raster layers. This isn’t as useful for just a couple of layers, but it will likely be useful to you later on when you are combining multiple threat layers.
@@ -204,8 +241,8 @@ spp_res <- resample(all_spp,threats_crop,method='ngb',progress='text')
 # stack: putting the layers on top of each other and seeing if they line up
 # if they don't line up, it won't stack (error)
 
-spp_threat_stack <- stack(threats_crop,spp_res)
-plot(spp_threat_stack,col=cols)
+krill1_invasives_stack <- stack(invasives_crop,krill1_res)
+plot(krill1_invasives_stack,col=cols)
 
 # Even though these layers still look similar to how they did before, the fact that they stacked together means they are likely ready for combination.
 
@@ -265,6 +302,14 @@ binary_cols_threat <- c("white","firebrick")
 plot(threat_binary,col=binary_cols_threat,legend=F,main="Top 20% of Threats")
 map('world',fill=T,add=T,col='gray')
 
+
+
+```
+
+
+```{r, Hotspots}
+
+
 #### HOTSPOTS ####
 
 # the hotspots
@@ -280,20 +325,60 @@ plot(hotspots,col=hotspot_cols,legend=F,main="Hotspots");map('world',fill=T,add=
 plot(hotspots,col=hotspot_cols,ext=extent(-121,-117,32,35),main="Hotspots, SB Channel",legend=F)
 map('world',fill=T,add=T,col='gray80')
 
+
 ```
 
-```{r}
 
-### import data ###
-all_spp <- raster("E:/TA files/CP2017_Owen/R lab development/Species_data/ca_curr_sp_rich.tif")
-all_threats <- raster("E:/TA files/CP2017_Owen/R lab development/Threats_data/full_modelnv.tif")
 
-#### Crop, resample, and reclassify ###
-all_spp <- reclassify(all_spp,rcl=c(-Inf,0,NA)) # reclass 0 to NA
-threats_crop <- crop(all_threats,all_spp) # crop threats to species
-spp_res <- resample(all_spp,threats_crop,method='ngb') # resample species to threat's resolution
+```{r, Shortcut for Overlaying}
+
+
+#### Reclassify ####
+
+# Reclassify the 0's to NA values. we want to find the top 20% of cells in each layer, and then combine the two layers to produce hotspots.
+
+krill_1 <- reclassify(krill_1,rcl=c(-Inf,0,NA)) # reclass 0 to NA
+krill_2 <- reclassify(krill_2,rcl=c(-Inf,0,NA)) 
+krill_3 <- reclassify(krill_4,rcl=c(-Inf,0,NA)) 
+krill_4 <- reclassify(krill_4,rcl=c(-Inf,0,NA)) 
+
+blue_whale <- reclassify(blue_whale,rcl=c(-Inf,0,NA)) 
+fin_whale <- reclassify(fin_whale,rcl=c(-Inf,0,NA)) 
+humpback <- reclassify(humpback,rcl=c(-Inf,0,NA)) 
+
+#### Crop ####
+
+# Crop each threat layer to Krill_1 Species so that they are the same extent (All species layers are already in the same extent)
+
+invasives_crop <- crop(impact_invasives, krill_1) #Crop the threats layer to the same extent at species
+oil_crop <- crop(impact_oil, krill_1)
+pens_crop <- crop(impact_pens, krill_1)
+pollution_crop <- crop(impact_pollution, krill_1)
+shipping_crop <- crop(impact_pollution, krill_1)
+trash_crop <- crop(impact_trash, krill_1)
+
+
+
+
+#### Resample ####
+
+# Resample each species layer to the threat resolution (Threat layers have the higher resolution)
+
+krill1_res <- resample(krill_1,invasives_crop,method='ngb',progress='text')
+krill2_res <- resample(krill_2,invasives_crop,method='ngb',progress='text')
+krill3_res <- resample(krill_3,invasives_crop,method='ngb',progress='text')
+krill4_res <- resample(krill_4,invasives_crop,method='ngb',progress='text')
+
+blue_res <- resample(blue_whale,invasives_crop,method='ngb',progress='text')
+fin_res <- resample(fin_whale,invasives_crop,method='ngb',progress='text')
+humpback_res <- resample(humpback,invasives_crop,method='ngb',progress='text')
+
+
+
+
 
 #### Function to output a binary raster based on a user-given quantile (default is top 20%) ###
+
 reclassify_topx <- function(rast,quant=0.8) {
   topx <- quantile(rast,quant) #find the 80% quantile of the raster values
   maxVal <- cellStats(rast,max) #find the maximum
@@ -303,18 +388,65 @@ reclassify_topx <- function(rast,quant=0.8) {
   return(out) # returns the new binary raster
 }
 
-### Find top 20%, using the code from above. We could easily choose a different quantile here. ###
-all_threats_top20 <- reclassify_topx(threats_crop,quant=0.8)
-all_spp_top20 <- reclassify_topx(spp_res,quant=0.8)
+
+
+
+### Find top 20% of Threats, using the code from above. We could easily choose a different quantile here. ###
+invasives_top20 <- reclassify_topx(invasives_crop,quant=0.8)
+oil_top20 <- reclassify_topx(oil_crop,quant=0.8)
+pens_top20 <- reclassify_topx(pens_crop,quant=0.8)
+pollution_top20 <- reclassify_topx(pollution_crop,quant=0.8)
+shipping_top20 <- reclassify_topx(shipping_crop,quant=0.8)
+trash_top20 <- reclassify_topx(trash_crop,quant=0.8)
+
+
+### Find top 20% of Species
+krill1_top20 <- reclassify_topx(krill1_res,quant=0.8)
+krill2_top20 <- reclassify_topx(krill2_res,quant=0.8)
+krill3_top20 <- reclassify_topx(krill3_res,quant=0.8)
+krill4_top20 <- reclassify_topx(krill4_res,quant=0.8)
+
+blue_top20 <- reclassify_topx(blue_res,quant=0.8)
+fin_top20 <- reclassify_topx(fin_res,quant=0.8)
+humpback_top20 <- reclassify_topx(humpback_res,quant=0.8)
+
+
+
+
+
 ### overlay and plot the hotspots ###
-## ??
-## ??
+
+# Overlay all Threats to get One Raster
+
+threat_hotspots <- overlay(invasives_top20, oil_top20, pens_top20, pollution_top20, shipping_top20, trash_top20, fun=function(a,b,c,d,e,f){a+b+c+d+e+f})
+
+plot(threat_hotspots)
+
+# Green is where there are 4 threats present. Not all 6 threats are together at once in any spot. The most is 4 threats. It doesn't specify which threats they are. 
+
+
+# Overlay all Species to get One Raster 
+species_hotspots <- overlay(krill1_top20, krill2_top20, krill3_top20, krill4_top20, blue_top20, fin_top20, humpback_top20,  fun=function(a,b,c,d,e,f,g){a+b+c+d+e+f+g})
+
+plot(species_hotspots)
+
+
+
+
+# Overlay Species and Threats
+
+
+hotspots <- overlay(threat_hotspots,species_hotspots,fun=function(x,y){x*y})
+
+plot(hotspots)
+
+
+
+
+#### Plot the Hotspots  ####
+ 
+
+# plot the hotspots!
+plot(hotspots,legend=F,main="Hotspots");map('world',fill=T,add=T,col='gray80')
 
 ```
-
-```{r}
-
-
-
-```
-
