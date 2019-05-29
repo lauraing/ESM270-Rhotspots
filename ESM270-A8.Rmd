@@ -151,11 +151,17 @@ cellStats(all_threats,sd)
 # The species data is in the Species data directory, and we import it just as we did the threats layer, by providing a full path name. We can then check its attributes.
 
 # Make sure the pathname to the data is correct
-all_spp <- raster("ca_curr_sp_rich.tif")
+krill_1 <- raster("ca_current_aquamap_Euphausia_diomedeae.tif")
+krill_2 <- raster("ca_current_aquamap_Euphausia_gibboides.tif")
+krill_3 <- raster("ca_current_aquamap_Euphausia_pacifica.tif")
+krill_4 <- raster("ca_current_aquamap_Euphausia_tenera.tif")
 
-all_spp
+krill_1
+krill_2
+krill_3
+krill_4
 
-plot(all_spp,col=cols)
+plot(krill_1,col=cols)
 
 # Seem to be more species toward the coast than offshore
 
