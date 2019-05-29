@@ -43,7 +43,12 @@ par(mar=c(2,2,1,1))
 # Let’s import the raster with the cumulative threat layer. Create a raster of the first file by calling raster() (think of this function like read.csv() for raster data, if you are familiar with that function).
 
 # Read in raster data
-all_threats <- raster("full_modelnv.tif")
+impact_invasives <- raster("impact_invasives.tif")
+impact_oil <- raster("impact_oil.tif")
+impact_pens <- raster("impact_pens.tif")
+impact_pollution <- raster("impact_pollution.tif")
+impact_shipping <- raster("impact_shipping.tif")
+impact_trash <- raster("impact_trash.tif")
 
 ```
 
@@ -51,13 +56,33 @@ all_threats <- raster("full_modelnv.tif")
 
 # We can then use plot() to plot the raster; it’s that easy! To override the default color scheme, we define the argument col= as our own scheme cols from above.
 
-plot(all_threats,col=cols)
+plot(impact_invasives,col=cols)
+plot(impact_oil,col=cols)
+plot(impact_pens,col=cols)
+plot(impact_pollution,col=cols)
+plot(impact_shipping,col=cols)
+plot(impact_trash,col=cols)
 
 # We can add a basemap to our raster by utilizing the maps package
 
 # add a landmap to your shapefile. the add=T argument tells R to add it to the existing plot.
 # make sure you understand what the other arguments do
-plot(all_threats,ext=extent(-130,-110,24,50),col=cols)
+plot(impact_invasives,ext=extent(-130,-110,24,50),col=cols)
+map('world',fill=T,add=T,col='gray')
+
+plot(impact_oil,ext=extent(-130,-110,24,50),col=cols)
+map('world',fill=T,add=T,col='gray')
+
+plot(impact_pens,ext=extent(-130,-110,24,50),col=cols)
+map('world',fill=T,add=T,col='gray')
+
+plot(impact_pollution,ext=extent(-130,-110,24,50),col=cols)
+map('world',fill=T,add=T,col='gray')
+
+plot(impact_shipping,ext=extent(-130,-110,24,50),col=cols)
+map('world',fill=T,add=T,col='gray')
+
+plot(impact_trash,ext=extent(-130,-110,24,50),col=cols)
 map('world',fill=T,add=T,col='gray')
 
 
@@ -67,13 +92,13 @@ map('world',fill=T,add=T,col='gray')
 
 # Visualizing exploring rasters in different ways can give us a great idea of our data, without even running much analysis. You can visualize a different extent, or subset, of the data:
 
-plot(all_threats,col=cols,ext=extent(-121,-117,32,35),main="Cumulative Threats") # A good extent for the Santa Barbara Channel
+plot(impact_trash,col=cols,ext=extent(-121,-117,32,35),main="Ocean Pollution Threats") # A good extent for the Santa Barbara Channel
 
 # Lower values are in darker/cooler colors; higher threat values are in red colors (scale of 0 to 65)
   # it's actually the stack of these threats; each # in the stack adds together to get this stacked score
 
 # The zoom() function, by default, allows you to draw your own extent just by clicking twice.
-plot(all_threats,col=cols)
+plot(impact_trash,col=cols)
 # zoom(all_threats,col=cols) #Interactive code not run in html
 
 # QUESTION: Which part of the SF Bay area is at highest threat?
