@@ -460,17 +460,52 @@ plot(hotspots,legend=T,main="Whale and Krill Species Hotspots ", ext=extent(-120
 
 ### All Species with Marine Threats
 
-```{r}
+```{r, Import Species Data}
 
+# The species data is in the Species data directory, and we import it just as we did the threats layer, by providing a full path name. We can then check its attributes.
 
+# Make sure the pathname to the data is correct
+all_spp <- raster("ca_curr_sp_rich.tif")
 
+all_spp
 
+plot(all_spp,col=cols)
 
-
-
+# Seem to be more species toward the coast than offshore
 
 ```
 
+```{r}
+
+```
+
+
+```{r}
+
+#### Crop, resample, and reclassify ###
+all_spp <- reclassify(all_spp,rcl=c(-Inf,0,NA)) # reclass 0 to NA
+
+
+#### Function to output a binary raster based on a user-given quantile (default is top 20%) ###
+reclassify_topx <- function(rast,quant=0.8) {
+  topx <- quantile(rast,quant) #find the 80% quantile of the raster values
+  maxVal <- cellStats(rast,max) #find the maximum
+  rcl <- c(-Inf,topx,0,
+            topx,maxVal,1) # reclassify matrix (see help file for ?reclassify)
+  out <- reclassify(rast,rcl=rcl)
+  return(out) # returns the new binary raster
+}
+
+### Find top 20%, using the code from above. We could easily choose a different quantile here. ###
+all_spp_top20 <- reclassify_topx(spp_res,quant=0.8)
+
+# Overlay Species and Threats
+hotspots2 <- overlay(threat_hotspots,all_spp,fun=function(x,y){x*y})
+
+plot(hotspots2)
+
+
+```
 
 
 
