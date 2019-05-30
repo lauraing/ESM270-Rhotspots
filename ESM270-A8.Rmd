@@ -88,7 +88,7 @@ map('world',fill=T,add=T,col='gray')
 
 ```
 
-```{r, Extent and Zoom}
+```{r, Extent and Zoom Example with Trash}
 
 # Visualizing exploring rasters in different ways can give us a great idea of our data, without even running much analysis. You can visualize a different extent, or subset, of the data:
 
@@ -447,6 +447,30 @@ plot(hotspots)
  
 
 # plot the hotspots!
-plot(hotspots,legend=F,main="Hotspots");map('world',fill=T,add=T,col='gray80')
+plot(hotspots,legend=F,main="Whale and Krill Species Hotspots");map('world',fill=T,add=T,col='gray80')
+
+
+
+# Zoom in on Baja
+plot(hotspots,legend=T,main="Whale and Krill Species Hotspots ", ext=extent(-120, -107, 20,30));map('world',fill=T,add=T,col='gray80')
 
 ```
+
+
+
+### All Species with Marine Threats
+
+```{r}
+
+
+
+
+
+
+
+
+```
+
+
+
+
