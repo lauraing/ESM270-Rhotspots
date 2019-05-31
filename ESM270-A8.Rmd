@@ -475,12 +475,8 @@ plot(all_spp,col=cols)
 
 ```
 
-```{r}
 
-```
-
-
-```{r}
+```{r, Crop/Resample/Reclassify All Species}
 
 #### Crop, resample, and reclassify ###
 all_spp <- reclassify(all_spp,rcl=c(-Inf,0,NA)) # reclass 0 to NA
@@ -496,6 +492,12 @@ reclassify_topx <- function(rast,quant=0.8) {
   return(out) # returns the new binary raster
 }
 
+
+
+
+
+
+
 ### Find top 20%, using the code from above. We could easily choose a different quantile here. ###
 all_spp_top20 <- reclassify_topx(spp_res,quant=0.8)
 
@@ -508,4 +510,21 @@ plot(hotspots2)
 ```
 
 
+## Read in MPA Data
+
+```{r, MPA Data}
+
+
+library(rgdal)
+library(sf)
+library(maptools)
+
+getwd()
+## In order to load in shapefiles you'll need all of the associated files
+
+MPA <- sf::read_sf("MPA_CA_Existing_160301.shp")
+
+NMS <- read_sf("National_Marine_Sanctuaries.shp")
+
+```
 
