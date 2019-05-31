@@ -480,7 +480,7 @@ plot(all_spp,col=cols)
 
 #### Crop, resample, and reclassify ###
 all_spp <- reclassify(all_spp,rcl=c(-Inf,0,NA)) # reclass 0 to NA
-
+spp_res <- resample(all_spp,threats_crop,method='ngb') # resample species to threat's resolution
 
 #### Function to output a binary raster based on a user-given quantile (default is top 20%) ###
 reclassify_topx <- function(rast,quant=0.8) {
@@ -502,7 +502,7 @@ reclassify_topx <- function(rast,quant=0.8) {
 all_spp_top20 <- reclassify_topx(spp_res,quant=0.8)
 
 # Overlay Species and Threats
-hotspots2 <- overlay(threat_hotspots,all_spp,fun=function(x,y){x*y})
+hotspots2 <- overlay(threat_hotspots,all_spp_top20,fun=function(x,y){x*y})
 
 plot(hotspots2)
 
