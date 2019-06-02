@@ -23,6 +23,7 @@ library(rgeos)        #Need this library for topology operations on geometries
 library(dplyr)        #NOT spatial - this is a data wrangling library
 library(RColorBrewer) #Also not spatial - used to set the spectral color scheme
 library(tmap)
+library(maps)
 
 ```
 
@@ -566,7 +567,42 @@ rast_mpa <- rasterize(MPA2, rast_base, field = 'STATUS_YR', fun = 'min')
 
 ```
 
+### Figure 1. Species Range and Threat Range
+
+```{r}
+
+
+## Map Top 20% All Species Range
 
 
 
+
+
+## Map "Other" Threat Range/Distribution
+
+
+
+```
+
+
+### Figure 2. Top 20% Threat and Species Hotspots 
+
+```{r}
+
+## Map where the Top 20% of All Species and the "Other" Threats overlap (hotspots)
+
+
+
+threat_spp_map <- tm_shape(hotspots2) + 
+  tm_raster(title = "Top 20% Species and Threats") +
+  tm_style("gray") + 
+  tm_layout(legend.position = c("left", "bottom"),
+            legend.text.color = "black",
+            legend.text.size = 0.5) + 
+  tm_basemap(server = "OpenStreetMap") +
+  tm_raster(title = "Cumulative Pollution Threats", style = 'cont') 
+
+
+threat_spp_map
+```
 
