@@ -511,6 +511,10 @@ plot(hotspots2,legend=T,main="All Species with 'Other' Threats");map('world',fil
 
 ## Top 20% of "Other" threats overlayed with Top 20% of ALL SPECIES
 
+# Export to ArcGIS
+writeRaster(hotspots2, "HotspotLab8", format = "GTiff")
+# (yourlayer, "TheNameYouWantToGive", format = "GTiff")
+
 ```
 
 
