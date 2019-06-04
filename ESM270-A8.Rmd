@@ -283,7 +283,7 @@ map('world',fill=T,add=T,col='gray')
 
 # TASK: Reclassify the threats layer (make sure it is the one with the correct extent!) to assign a value of 1 to the top 20% of the cells, and a zero to the others
 
-hist(threats_crop,main="Threat Raster Values")
+# hist(threats_crop,main="Threat Raster Values")
 
 #?quantile what does the quantile function do?
 threat_cutoff <- quantile(threats_crop,0.8) # Find the value of the 80th percentile
@@ -310,21 +310,21 @@ map('world',fill=T,add=T,col='gray')
 
 ```{r, Hotspots}
 
-
-#### HOTSPOTS ####
-
-# the hotspots
-hotspots <- overlay(spp_binary,threat_binary,fun=function(x,y){x+y})
-
-# color breakpoints. We need three colors now! (cell values of 0,1,or 2)
-brks_hotspots <- seq(0,3,length.out=4) 
-hotspot_cols <- c("white","lightblue","firebrick") #
-
-# plot the hotspots!
-plot(hotspots,col=hotspot_cols,legend=F,main="Hotspots");map('world',fill=T,add=T,col='gray80')
-
-plot(hotspots,col=hotspot_cols,ext=extent(-121,-117,32,35),main="Hotspots, SB Channel",legend=F)
-map('world',fill=T,add=T,col='gray80')
+# 
+# #### HOTSPOTS ####
+# 
+# # the hotspots
+# hotspots <- overlay(spp_binary,threat_binary,fun=function(x,y){x+y})
+# 
+# # color breakpoints. We need three colors now! (cell values of 0,1,or 2)
+# brks_hotspots <- seq(0,3,length.out=4) 
+# hotspot_cols <- c("white","lightblue","firebrick") #
+# 
+# # plot the hotspots!
+# plot(hotspots,col=hotspot_cols,legend=F,main="Hotspots");map('world',fill=T,add=T,col='gray80')
+# 
+# plot(hotspots,col=hotspot_cols,ext=extent(-121,-117,32,35),main="Hotspots, SB Channel",legend=F)
+# map('world',fill=T,add=T,col='gray80')
 
 
 ```
@@ -373,6 +373,60 @@ krill4_res <- resample(krill_4,invasives_crop,method='ngb',progress='text')
 blue_res <- resample(blue_whale,invasives_crop,method='ngb',progress='text')
 fin_res <- resample(fin_whale,invasives_crop,method='ngb',progress='text')
 humpback_res <- resample(humpback,invasives_crop,method='ngb',progress='text')
+
+
+# Overlay Whale and Krill Species Range to get One Raster 
+wk_sp_range <- overlay(krill1_res, krill2_res, krill3_res, krill4_res, blue_res, fin_res, humpback_res,  fun=function(a,b,c,d,e,f,g){a+b+c+d+e+f+g})
+
+plot(wk_sp_range)
+
+
+# Export to Arc
+
+#writeRaster(wk_sp_range, "WhaleKrillFullRange", format = "GTiff")
+
+###############
+
+
+# Overlay Krill Species Range to get One Raster 
+krill_range <- overlay(krill1_res, krill2_res, krill3_res, krill4_res,  fun=function(a,b,c,d){a+b+c+d})
+
+plot(krill_range)
+
+
+# Export to Arc
+
+# writeRaster(wk_sp_range, "WhaleKrillFullRange", format = "GTiff")
+
+
+
+#######
+
+
+
+# Overlay Whale Species Range to get One Raster 
+whale_range <- overlay(blue_res, fin_res, humpback_res,  fun=function(a,b,c){a+b+c})
+
+plot(whale_range)
+
+
+
+# Top 20$% of whales
+top_blue <- reclassify_topx(blue_res,quant=0.8)
+top_fin<- reclassify_topx(fin_res,quant=0.8)
+top_hump <- reclassify_topx(humpback_res,quant=0.8)
+
+# Overlay top Whale Species Range to get One Raster 
+topwhale_range <- overlay(top_blue, top_fin, top_hump,  fun=function(a,b,c){a+b+c})
+
+plot(topwhale_range)
+
+
+
+
+# Export to Arc
+
+# (wk_sp_range, "WhaleKrillFullRange", format = "GTiff")
 
 
 
@@ -425,11 +479,78 @@ plot(threat_hotspots)
 
 # Green is where there are 4 threats present. Not all 6 threats are together at once in any spot. The most is 4 threats. It doesn't specify which threats they are. 
 
+# Export to Arc
+
+# writeRaster(threat_hotspots, "ThreatHotSpots", format = "GTiff")
+
+
+##################
+
+
+# Overlay top whale range with top threats
+
+top_whale_threats <- overlay(threat_hotspots,topwhale_range,fun=function(x,y){x*y})
+
+plot(top_whale_threats)
+
+
+
+
 
 # Overlay all Species to get One Raster 
 species_hotspots <- overlay(krill1_top20, krill2_top20, krill3_top20, krill4_top20, blue_top20, fin_top20, humpback_top20,  fun=function(a,b,c,d,e,f,g){a+b+c+d+e+f+g})
 
 plot(species_hotspots)
+
+
+
+
+###########
+
+# Overlay Krill 3 (Pacifica) and Whales
+
+ 
+krill3_whales <- overlay(krill3_res, blue_res, fin_res, humpback_res,  fun=function(a,b,c,d){a+b+c+d})
+
+plot(krill3_whales)
+
+### Overlay krill3_whales with threat_hotspots
+
+
+krill3_whale_threats <- overlay(threat_hotspots,krill3_whales,fun=function(x,y){x*y})
+
+plot(krill3_whale_threats)
+
+
+# Export to Arc
+
+#writeRaster(krill3_whale_threats, "WhaleKrillHotSpots2", format = "GTiff")
+
+
+
+
+
+
+############ TOP 20 OF WHALE AND KRILL #####################
+
+
+top_krill3_whales <- overlay(krill3_top20, top_blue, top_fin, top_hump,  fun=function(a,b,c,d){a+b+c+d})
+
+plot(top_krill3_whales)
+
+### Overlay krill3_whales with threat_hotspots
+
+
+krill3_whale_threats <- overlay(threat_hotspots,krill3_whales,fun=function(x,y){x*y})
+
+plot(krill3_whale_threats)
+
+
+# Export to Arc
+
+writeRaster(krill3_whale_threats, "WhaleKrillHotSpots2", format = "GTiff")
+
+
 
 
 
@@ -454,6 +575,12 @@ plot(hotspots,legend=F,main="Whale and Krill Species Hotspots");map('world',fill
 
 # Zoom in on Baja
 plot(hotspots,legend=T,main="Whale and Krill Species Hotspots ", ext=extent(-120, -107, 20,30));map('world',fill=T,add=T,col='gray80')
+
+
+# Export to Arc
+
+
+writeRaster(hotspots, "HotKrillLab8", format = "GTiff")
 
 ```
 
@@ -566,47 +693,53 @@ plot(NMS2, col = 'light blue', border = 'blue')
 
 # Rasterize MPA and NMS
 
-rast_mpa <- rasterize(MPA2, rast_base, field = 'STATUS_YR', fun = 'min')
+ # rast_mpa <- rasterize(MPA2, rast_base, field = 'STATUS_YR', fun = 'min')
 
 
 ```
 
-### Figure 1. Species Range and Threat Range
+### Figure 1. Top 20% Species and Other Threats Overlay
 
 ```{r}
 
-
-## Map Top 20% All Species Range
-
-
-
+# A. Species Threats Overlay Export
+# writeRaster(hotspots2, "HotspotLab8", format = "GTiff")
+# (yourlayer, "TheNameYouWantToGive", format = "GTiff")
 
 
-## Map "Other" Threat Range/Distribution
+# B. Overlay with MPA and NMS
+
 
 
 
 ```
 
 
-### Figure 2. Top 20% Threat and Species Hotspots 
+### Figure 2. Krill/WHALE PRESENCE WITH OTHER THREATS OVERLAY
 
 ```{r}
 
 ## Map where the Top 20% of All Species and the "Other" Threats overlap (hotspots)
 
 
+# 
+# threat_spp_map <- tm_shape(hotspots2) + 
+#   tm_raster(title = "Top 20% Species and Threats") +
+#   tm_style("gray") + 
+#   tm_layout(legend.position = c("left", "bottom"),
+#             legend.text.color = "black",
+#             legend.text.size = 0.5) + 
+#   tm_basemap(server = "OpenStreetMap") +
+#   tm_raster(title = "Cumulative Pollution Threats", style = 'cont') 
+# 
+# 
+# threat_spp_map
 
-threat_spp_map <- tm_shape(hotspots2) + 
-  tm_raster(title = "Top 20% Species and Threats") +
-  tm_style("gray") + 
-  tm_layout(legend.position = c("left", "bottom"),
-            legend.text.color = "black",
-            legend.text.size = 0.5) + 
-  tm_basemap(server = "OpenStreetMap") +
-  tm_raster(title = "Cumulative Pollution Threats", style = 'cont') 
 
 
-threat_spp_map
+# FIGURE 2 WILL BE KRILL/WHALE OVERLAY with OTHER THREATS
+
+# writeRaster(hotspots, "HotKrillLab8", format = "GTiff")
+
 ```
 
